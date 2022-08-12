@@ -7,7 +7,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 
 # direct to the orders file itself and open it
 orders_path = path + "\\orders.csv"
-output_path = path + "\\99 scan upload"
+output_path = path + "\\99 scan upload.txt"
 
 # csv or txt for output file
 scan_path = path + "\\scan_upload.csv"
@@ -38,6 +38,7 @@ with open(orders_path, "r") as o:
 # add a 01 in between each actual barcode?
 
 with open(output_path, "w") as output:
+    output.write("\n")
     for barcode in barcode_list:
         output.write(barcode)
         output.write("\t")
