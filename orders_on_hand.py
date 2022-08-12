@@ -9,7 +9,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 upc_path = path + "\\upc_list.csv"
 stock_path = path + "\\stock_status.csv"
 orders_path = path + "\\orders.csv"
-output_path = path + "\\sorted_orders.csv"
+output_path = path + "\\orders_on_hand.csv"
 
 with open(upc_path, "r") as upc_list:
     upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str})
