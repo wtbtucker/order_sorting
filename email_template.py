@@ -68,6 +68,7 @@ def user_input():
                         Shrewsbury = 14,
                         Glastonbury = 15,
                         Fairfield = 16,
+                        Portsmouth = 17,
                         Manchester = 18,
                         Concord = 19,
                         Northampton = 20,
