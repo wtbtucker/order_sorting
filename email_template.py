@@ -45,12 +45,9 @@ def generate_templates(store, order_list):
     store_orders = []
     
 
-    for current in neighbor_orders(order_list):
+    for current in order_list:
         current_store = current["Note"]
         current_order = current["Order number"]
-        #if previous:
-        #    prev_store = previous["Note"]
-        #j = len(store_orders)
 
         # check for multi-store line items
         if "," in current_store:
@@ -61,17 +58,7 @@ def generate_templates(store, order_list):
         elif current_order == "":
             print("Please fix blank order numbers")
         elif current_store == store:
-         #   if current_order == "":
-          #      current_order = previous["Order number"] + ": Only " + current["Line item quantity"] + " " + current["Line item title"] + " in size " + current["Line item variant title"]
             store_orders.append(current_order)
-#
- #       elif current_order == "":
-  #          if prev_store == store or current_store == store and prev_store != current_store:
-   #             # alter list entry to specify the partial order
-    #            prev_text = previous["Order number"] + ": Only " + previous["Line item quantity"] + " " + previous["Line item title"] + " in size " + previous["Line item variant title"]
-     #           store_orders[j-1] = prev_text
-        
-        # add current store to list if matches user input
 
     return store_orders
 
