@@ -67,7 +67,11 @@ for i in range(0, (len(orders) - 1)):
 
         # count the number of entries each store has in the temporary dataframe (succesful queries)
         sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) >= line_items)
-        if not sorted_multi_df.empty:
+        if not sorted_multi_df.loc[sorted_multi_df.StoreCode == 99].empty:
+            temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 99]
+        elif not sorted_multi_df.loc[sorted_multi_df.StoreCode == 8].empty:
+            temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 8]
+        elif not sorted_multi_df.empty:
             temp_df = sorted_multi_df
         temp_df.insert(0, "order_number", order_number)
         multi_frames = [temp_df, output2]
@@ -78,17 +82,24 @@ for i in range(0, (len(orders) - 1)):
         barcode = row["Product barcode"]
         df = output1.loc[output1["Upc"] == barcode]
         
-        if len(df.loc[df.StoreCode == 99]) > 0:
-            df = df.loc[df.StoreCode == 99]
-        elif len(df.loc[df.StoreCode == 8]) > 0:
-            df = (df.loc[df.StoreCode == 8])
-        # check for 99 then check for 8 within the dataframe
+        if not df.empty:
+            if len(df.loc[df.StoreCode == 99]) > 0:
+                df = df.loc[df.StoreCode == 99]
+            elif len(df.loc[df.StoreCode == 8]) > 0:
+                df = (df.loc[df.StoreCode == 8])
+            else:
+                df = df.sample(frac=1).reset_index(drop=True)
+                df = df.loc[[df.OnHand.idxmax()]]
+                # print(s)
+                # output2.append(s, ignore_index=True)
+            # randomize then select idxmax
+            # df = df.loc[df.OnHand.idxmax]
+            # check for 99 then check for 8 within the dataframe
 
-
-        # append order number to inventory information
-        df.insert(0, "order_number", order_number)
-        
-        frames = [df, output2]
-        output2 = pd.concat(frames)
+            # append order number to inventory information
+            df.insert(0, "order_number", order_number)
+            
+            frames = [df, output2]
+            output2 = pd.concat(frames)
 
 output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
