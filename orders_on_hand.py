@@ -33,24 +33,26 @@ with open(orders_path, "r") as o:
     orders = orders.reset_index()
 
 output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL"], right_on=["SKU","COL"])
-output2 = pd.DataFrame()
+output2 = pd.DataFrame(index=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
 
 # iterate over rows in the order file
+count = 0
 for i in range(0, (len(orders) - 1)):
+    if i < count:
+        continue
+    
     row = orders.iloc[i]
     order_number = row["Order number"]
    
    # if multiple rows associated with an order add those rows to a temporary dataframe
-    if len(orders.loc[orders["Order number"] == order_number]) > 1:
-              
+    if len(orders.loc[orders["Order number"] == order_number]) > 1:   
         temp_df = pd.DataFrame()
         while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
             
             # query inventory file for stores with the line item in stock
-            # do I want to add for each line item quantity?
-            line_item_code = orders.loc[i, "Product barcode"]
+            # TODO: line item quantity
             # line_item_quantity = orders.loc[i, "line_item_quantity"]
-            # while line_item_quantity > 0:
+            line_item_code = orders.loc[i, "Product barcode"]
 
             multi_df = output1.loc[output1["Upc"] == line_item_code]
 
@@ -58,50 +60,35 @@ for i in range(0, (len(orders) - 1)):
             temp_list = [multi_df, temp_df]
             temp_df = pd.concat(temp_list)
             i = i + 1
+            count = i
 
         # total number of items on the order
         line_items = orders.loc[orders["Order number"] == order_number].line_item_quantity.agg(sum)
 
         # count the number of entries each store has in the temporary dataframe (succesful queries)
+        sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) >= line_items)
+        if not sorted_multi_df.empty:
+            temp_df = sorted_multi_df
+        temp_df.insert(0, "order_number", order_number)
+        multi_frames = [temp_df, output2]
+        output2 = pd.concat(multi_frames)
 
-        # want to select the stores where entries in temp_df == line_items
-        store_counts = temp_df.StoreCode.value_counts()
-        # return store codes from store counts where = line_items
-        # create an alignable boolean series with the same length as store_counts
-        store_counts[store_counts["StoreCode" == line_items]]
-        most_frequent = temp_df.StoreCode.mode()
-        print(temp_df.loc[temp_df.StoreCode == most_frequent])
-        temp_df.groupby("StoreCode").apply(lambda temp_df: temp_df.loc[temp_df.StoreCode.mode()])
-        print(temp_df)
+    else:
+        # return dataframe of inventory rows that match barcode
+        barcode = row["Product barcode"]
+        df = output1.loc[output1["Upc"] == barcode]
         
+        if len(df.loc[df.StoreCode == 99]) > 0:
+            df = df.loc[df.StoreCode == 99]
+        elif len(df.loc[df.StoreCode == 8]) > 0:
+            df = (df.loc[df.StoreCode == 8])
+        # check for 99 then check for 8 within the dataframe
+
+
+        # append order number to inventory information
+        df.insert(0, "order_number", order_number)
         
-        # query for stores where store_count == line_items
-        # hard to follow if this actually works
-        # can only compare identically-labeled series object
-        
-        # store_count.loc[store_count == line_items
-        
-
-        # need to take the list of stores from the previous step and change temp_df to only those stores
-        # then append temp_df to output
-
-
-
-    # return dataframe of inventory rows that match barcode
-    barcode = row["Product barcode"]
-    df = output1.loc[output1["Upc"] == barcode]
-    
-    if len(df.loc[df.StoreCode == 99]) > 0:
-        df = df.loc[df.StoreCode == 99]
-    elif len(df.loc[df.StoreCode == 8]) > 0:
-        df = (df.loc[df.StoreCode == 8])
-    # check for 99 then check for 8 within the dataframe
-
-
-    # append order number to inventory information
-    df.insert(0, "order_number", order_number)
-    
-    frames = [df, output2]
-    output2 = pd.concat(frames)
+        frames = [df, output2]
+        output2 = pd.concat(frames)
 
 output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
