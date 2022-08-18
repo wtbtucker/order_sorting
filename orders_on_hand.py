@@ -18,7 +18,7 @@ with open(stock_path, "r") as stock_status:
 
 with open(orders_path, "r") as o:
     orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item quantity"], dtype={"Product barcode":str})
-
+    orders["line_item_quantity"] = orders["Line item quantity"]
     # remove orders with existing notes
     orders = orders.loc[orders["Note"].isnull()]
 
@@ -41,18 +41,50 @@ for i in range(0, (len(orders) - 1)):
     order_number = row["Order number"]
    
    # if multiple rows associated with an order add those rows to a temporary dataframe
-    # if len(orders.loc[orders["Order number"] == order_number]) > 1:
-    #     temp_df = pd.DataFrame()
-    #     while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
-    #         line_item_code = orders.loc[i, "Product barcode"]
-    #         multi_df = output1.loc[output1["Upc"] == line_item_code]
-    #         # TODO: not sure if the order number column is necessary
-    #         multi_df.insert(0, "order_number", order_number)
-    #         temp_list = [multi_df, temp_df]
-    #         temp_df = pd.concat(temp_list)
-    #         i = i + 1
-    #     temp_df = temp_df.groupby("StoreCode")
-    #     print(temp_df)
+    if len(orders.loc[orders["Order number"] == order_number]) > 1:
+              
+        temp_df = pd.DataFrame()
+        while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
+            
+            # query inventory file for stores with the line item in stock
+            # do I want to add for each line item quantity?
+            line_item_code = orders.loc[i, "Product barcode"]
+            # line_item_quantity = orders.loc[i, "line_item_quantity"]
+            # while line_item_quantity > 0:
+
+            multi_df = output1.loc[output1["Upc"] == line_item_code]
+
+            # append line item quantity?
+            temp_list = [multi_df, temp_df]
+            temp_df = pd.concat(temp_list)
+            i = i + 1
+
+        # total number of items on the order
+        line_items = orders.loc[orders["Order number"] == order_number].line_item_quantity.agg(sum)
+
+        # count the number of entries each store has in the temporary dataframe (succesful queries)
+
+        # want to select the stores where entries in temp_df == line_items
+        store_counts = temp_df.StoreCode.value_counts()
+        # return store codes from store counts where = line_items
+        # create an alignable boolean series with the same length as store_counts
+        store_counts[store_counts["StoreCode" == line_items]]
+        most_frequent = temp_df.StoreCode.mode()
+        print(temp_df.loc[temp_df.StoreCode == most_frequent])
+        temp_df.groupby("StoreCode").apply(lambda temp_df: temp_df.loc[temp_df.StoreCode.mode()])
+        print(temp_df)
+        
+        
+        # query for stores where store_count == line_items
+        # hard to follow if this actually works
+        # can only compare identically-labeled series object
+        
+        # store_count.loc[store_count == line_items
+        
+
+        # need to take the list of stores from the previous step and change temp_df to only those stores
+        # then append temp_df to output
+
 
 
     # return dataframe of inventory rows that match barcode
