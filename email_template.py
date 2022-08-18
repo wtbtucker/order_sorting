@@ -55,8 +55,8 @@ def generate_templates(store, order_list):
             # need a return value here to stop iteration
 
         # append current order to list only if it does not match the previous order
-        elif current_order == "":
-            print("Please fix blank order numbers")
+        # elif current_order == "":
+        #     print("Please fix blank order numbers")
         elif current_store == store:
             store_orders.append(current_order)
 
