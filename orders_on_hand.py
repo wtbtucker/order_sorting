@@ -47,6 +47,7 @@ for i in range(0, (len(orders) - 1)):
         while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
             
             # query inventory file for stores with the line item in stock
+            # do I want to add for each line item quantity?
             line_item_code = orders.loc[i, "Product barcode"]
             # line_item_quantity = orders.loc[i, "line_item_quantity"]
             # while line_item_quantity > 0:
@@ -62,11 +63,24 @@ for i in range(0, (len(orders) - 1)):
         line_items = orders.loc[orders["Order number"] == order_number].line_item_quantity.agg(sum)
 
         # count the number of entries each store has in the temporary dataframe (succesful queries)
-        store_count = temp_df.groupby("StoreCode").Upc.agg(len)
 
+        # want to select the stores where entries in temp_df == line_items
+        store_counts = temp_df.StoreCode.value_counts()
+        # return store codes from store counts where = line_items
+        # create an alignable boolean series with the same length as store_counts
+        store_counts[store_counts["StoreCode" == line_items]]
+        most_frequent = temp_df.StoreCode.mode()
+        print(temp_df.loc[temp_df.StoreCode == most_frequent])
+        temp_df.groupby("StoreCode").apply(lambda temp_df: temp_df.loc[temp_df.StoreCode.mode()])
+        print(temp_df)
+        
+        
         # query for stores where store_count == line_items
         # hard to follow if this actually works
-        print(store_count.loc[store_count == line_items])
+        # can only compare identically-labeled series object
+        
+        # store_count.loc[store_count == line_items
+        
 
         # need to take the list of stores from the previous step and change temp_df to only those stores
         # then append temp_df to output
