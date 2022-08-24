@@ -102,4 +102,6 @@ for i in range(0, (len(orders) - 1)):
             frames = [df, output2]
             output2 = pd.concat(frames)
 
+output2.order_number = output2.order_number.astype(str)
+output2 = output2.sort_values(by="order_number", ascending=False)
 output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
