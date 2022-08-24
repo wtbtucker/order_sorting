@@ -32,8 +32,9 @@ with open(orders_path, "r") as o:
             orders.loc[i,"Order number"] = order_number
     orders = orders.reset_index()
 
+# merge inventory files and initialize output dataframe
 output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL"], right_on=["SKU","COL"])
-output2 = pd.DataFrame(index=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
+output2 = pd.DataFrame()
 
 # iterate over rows in the order file
 count = 0
@@ -96,11 +97,9 @@ for i in range(0, (len(orders) - 1)):
             # df = df.loc[df.OnHand.idxmax]
             # check for 99 then check for 8 within the dataframe
 
-            # append order number to inventory information
-            df.insert(0, "order_number", order_number)
-            
-            frames = [df, output2]
-            output2 = pd.concat(frames)
+            # append order number to inventory information and add to output dataframe
+            df.insert(0, "order_number", order_number)  
+            output2 = pd.concat([df,output2])
 
 output2.order_number = output2.order_number.astype(str)
 output2 = output2.sort_values(by="order_number", ascending=False)
