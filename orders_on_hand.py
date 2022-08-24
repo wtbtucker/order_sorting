@@ -19,17 +19,17 @@ with open(stock_path, "r") as stock_status:
 with open(orders_path, "r") as o:
     orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item quantity"], dtype={"Product barcode":str})
     orders["line_item_quantity"] = orders["Line item quantity"]
-    # remove orders with existing notes
-    orders = orders.loc[orders["Note"].isnull()]
 
-    # remove orders with existing notes
     # TODO: remove multi line item orders with notes
     for i in range(len(orders)):
         row = orders.iloc[i]
         if not pd.isna(row["Order number"]):
             order_number = row["Order number"]
+            note = row["Note"]
         else:
             orders.loc[i,"Order number"] = order_number
+            orders.loc[i,"Note"] = note
+    orders = orders.loc[orders["Note"].isnull()]
     orders = orders.reset_index()
 
 # merge inventory files and initialize output dataframe
