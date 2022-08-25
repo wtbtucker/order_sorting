@@ -46,17 +46,19 @@ for i in range(0, (len(orders) - 1)):
     row = orders.iloc[i]
     order_number = row["Order number"]
    
-   # if multiple rows associated with an order add those rows to a temporary dataframe
-    if len(orders.loc[orders["Order number"] == order_number]) > 1:   
+   # if multiple items associated with an order add those rows to a temporary dataframe
+    if len(orders.loc[orders["Order number"] == order_number]) > 1 or row["line_item_quantity"] > 1:   
         temp_df = pd.DataFrame()
         while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
             
             # query inventory file for stores with the line item in stock
-            # TODO: line item quantity
-            # line_item_quantity = orders.loc[i, "line_item_quantity"]
             line_item_code = orders.loc[i, "Product barcode"]
-
             multi_df = output1.loc[output1["Upc"] == line_item_code]
+
+            # if there are stores that have line_item_quantity on hand add only those stores to dataframe
+            line_item_quantity = orders.loc[i, "line_item_quantity"]
+            if not multi_df.loc[multi_df["OnHand"] >= line_item_quantity].empty:
+                multi_df = multi_df.loc[multi_df["OnHand"] >= line_item_quantity]
 
             # append line item quantity?
             temp_list = [multi_df, temp_df]
@@ -92,11 +94,6 @@ for i in range(0, (len(orders) - 1)):
             else:
                 df = df.sample(frac=1).reset_index(drop=True)
                 df = df.loc[[df.OnHand.idxmax()]]
-                # print(s)
-                # output2.append(s, ignore_index=True)
-            # randomize then select idxmax
-            # df = df.loc[df.OnHand.idxmax]
-            # check for 99 then check for 8 within the dataframe
 
             # append order number to inventory information and add to output dataframe
             df.insert(0, "order_number", order_number)  
