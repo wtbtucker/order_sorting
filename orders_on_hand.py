@@ -67,8 +67,8 @@ for i in range(0, (len(orders) - 1)):
                 order_length = order_length + 1
             
             # append to dataframe and move onto next row associated with order
-            temp_list = [multi_df, temp_df]
-            temp_df = pd.concat(temp_list)
+            temp_df = pd.concat([multi_df, temp_df])
+
             i = i + 1
             count = i
 
@@ -82,7 +82,9 @@ for i in range(0, (len(orders) - 1)):
             temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 8]
         elif not sorted_multi_df.empty:
             # TODO: select store with the greatest quantity on hand
-            temp_df = sorted_multi_df.head(order_length)
+            sample_row = sorted_multi_df.sample()
+            sample_store = sample_row.iloc[0]["StoreCode"]
+            temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == sample_store]
         temp_df.insert(0, "order_number", order_number)
         multi_frames = [temp_df, output2]
         output2 = pd.concat(multi_frames)
