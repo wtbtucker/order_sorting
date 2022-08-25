@@ -10,11 +10,12 @@ output_path = path + "\\orders_on_hand.csv"
 
 # open input files into pandas dataframes
 with open(upc_path, "r") as upc_list:
-    upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str})
+    upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "SecondaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str, "SecondaryFeature":str})
     upc["COL"] = upc["PrimaryFeature"]
+    upc["ROW"] = upc["SecondaryFeature"]
 
 with open(stock_path, "r") as stock_status:
-    stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "OnHand"], dtype={"COL":str})
+    stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "ROW", "OnHand"], dtype={"COL":str, "ROW":str})
 
 with open(orders_path, "r") as o:
     orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item quantity"], dtype={"Product barcode":str})
@@ -33,7 +34,7 @@ with open(orders_path, "r") as o:
     orders = orders.reset_index()
 
 # merge inventory files and initialize output dataframe
-output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL"], right_on=["SKU","COL"])
+output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL","ROW"], right_on=["SKU","COL","ROW"])
 output2 = pd.DataFrame()
 
 # iterate over rows in the order file
