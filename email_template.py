@@ -15,7 +15,10 @@ def main():
             reader = csv.DictReader(file)
             store = user_input()
             store_number = store[1]
-            store_name = store[0]
+            if store[0] == "Old_Saybrook":
+                store_name = "Old Saybrook"
+            else:
+                store_name = store[0]
 
             prelim_template = "Hi " + store_name
             # create a list from the dictreader
