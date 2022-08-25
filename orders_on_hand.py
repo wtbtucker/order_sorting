@@ -13,15 +13,13 @@ with open(upc_path, "r") as upc_list:
     upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "SecondaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str, "SecondaryFeature":str})
     upc["COL"] = upc["PrimaryFeature"]
     upc["ROW"] = upc["SecondaryFeature"]
-
 with open(stock_path, "r") as stock_status:
     stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "ROW", "OnHand"], dtype={"COL":str, "ROW":str})
-
 with open(orders_path, "r") as o:
     orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item quantity"], dtype={"Product barcode":str})
     orders["line_item_quantity"] = orders["Line item quantity"]
 
-    # TODO: remove multi line item orders with notes
+    # add order number and note to multi-line orders
     for i in range(len(orders)):
         row = orders.iloc[i]
         if not pd.isna(row["Order number"]):
@@ -30,6 +28,8 @@ with open(orders_path, "r") as o:
         else:
             orders.loc[i,"Order number"] = order_number
             orders.loc[i,"Note"] = note
+    
+    # remove orders with notes
     orders = orders.loc[orders["Note"].isnull()]
     orders = orders.reset_index()
 
@@ -40,14 +40,16 @@ output2 = pd.DataFrame()
 # iterate over rows in the order file
 count = 0
 for i in range(0, (len(orders) - 1)):
+    # after multi-line order start at the next order, not the next row
     if i < count:
         continue
     
     row = orders.iloc[i]
     order_number = row["Order number"]
-   
+    order_length = len(orders.loc[orders["Order number"] == order_number])
+
    # if multiple items associated with an order add those rows to a temporary dataframe
-    if len(orders.loc[orders["Order number"] == order_number]) > 1 or row["line_item_quantity"] > 1:   
+    if order_length > 1 or row["line_item_quantity"] > 1:   
         temp_df = pd.DataFrame()
         while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
             
@@ -55,28 +57,32 @@ for i in range(0, (len(orders) - 1)):
             line_item_code = orders.loc[i, "Product barcode"]
             multi_df = output1.loc[output1["Upc"] == line_item_code]
 
-            # if there are stores that have line_item_quantity on hand add only those stores to dataframe
+            # add only those stores with enough OnHand to fulfill item to dataframe
             line_item_quantity = orders.loc[i, "line_item_quantity"]
             if not multi_df.loc[multi_df["OnHand"] >= line_item_quantity].empty:
                 multi_df = multi_df.loc[multi_df["OnHand"] >= line_item_quantity]
-
-            # append line item quantity?
+            
+            # ensure order not sorted to a single store
+            else:
+                order_length = order_length + 1
+            
+            # append to dataframe and move onto next row associated with order
             temp_list = [multi_df, temp_df]
             temp_df = pd.concat(temp_list)
             i = i + 1
             count = i
 
-        # total number of items on the order
-        line_items = orders.loc[orders["Order number"] == order_number].line_item_quantity.agg(sum)
 
         # count the number of entries each store has in the temporary dataframe (succesful queries)
-        sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) >= line_items)
+        sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) == order_length)
+
         if not sorted_multi_df.loc[sorted_multi_df.StoreCode == 99].empty:
             temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 99]
         elif not sorted_multi_df.loc[sorted_multi_df.StoreCode == 8].empty:
             temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 8]
         elif not sorted_multi_df.empty:
-            temp_df = sorted_multi_df
+            # TODO: select store with the greatest quantity on hand
+            temp_df = sorted_multi_df.head(order_length)
         temp_df.insert(0, "order_number", order_number)
         multi_frames = [temp_df, output2]
         output2 = pd.concat(multi_frames)
