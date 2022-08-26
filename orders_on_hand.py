@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-
+from random import randint
 
 def main():
     # set path for input and output files
@@ -45,7 +45,6 @@ def main():
         # after multi-line order start at the next order, not the next row
         if i < count:
             continue
-        
         row = orders.iloc[i]
         order_number = row["Order number"]
         order_length = len(orders.loc[orders["Order number"] == order_number])
@@ -59,16 +58,12 @@ def main():
                 line_item_code = orders.loc[i, "Product barcode"]
                 multi_df = output1.loc[output1["Upc"] == line_item_code]
 
-                # add only those stores with enough OnHand to fulfill item to dataframe
+                # add stores with line_item_quantity on hand or ensure sort to multiple stores
                 line_item_quantity = orders.loc[i, "line_item_quantity"]
                 if not multi_df.loc[multi_df["OnHand"] >= line_item_quantity].empty:
                     multi_df = multi_df.loc[multi_df["OnHand"] >= line_item_quantity]
-                
-                # ensure order not sorted to a single store
                 else:
                     order_length = order_length + 1
-                
-                # append to dataframe and move onto next row associated with order
                 temp_df = pd.concat([multi_df, temp_df])
                 i = i + 1
                 count = i
@@ -84,7 +79,7 @@ def main():
             df = output1.loc[output1["Upc"] == barcode]
             
             if not df.empty:
-                df = sort(df)
+                df = sort_single(df)
                 # append order number to inventory information and add to output dataframe
                 df.insert(0, "order_number", order_number)  
                 output2 = pd.concat([df,output2])
@@ -95,26 +90,27 @@ def main():
 
 
 def sort_multi(temp_df, order_length):
+    
+    # if possible select store with successful queries for all items on hand
     sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) == order_length)
-
     if not sorted_multi_df.loc[sorted_multi_df.StoreCode == 99].empty:
             temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 99]
     elif not sorted_multi_df.loc[sorted_multi_df.StoreCode == 8].empty:
         temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 8]
     elif not sorted_multi_df.empty:
-        # select random store
-        sample_row = sorted_multi_df.sample()
-        sample_store = sample_row.iloc[0]["StoreCode"]
-        temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == sample_store]
+        random_row = randint(1, len(sorted_multi_df)) - 1
+        random_store = sorted_multi_df.iloc[random_row]["StoreCode"]
+        temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == random_store]
     return temp_df
 
 
-def sort(df):
+def sort_single(df):
     if len(df.loc[df.StoreCode == 99]) > 0:
         df = df.loc[df.StoreCode == 99]
     elif len(df.loc[df.StoreCode == 8]) > 0:
         df = (df.loc[df.StoreCode == 8])
     else:
+        # select random store
         df = df.sample(frac=1).reset_index(drop=True)
         df = df.loc[[df.OnHand.idxmax()]]
     return df
