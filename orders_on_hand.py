@@ -50,12 +50,12 @@ def main():
         order_number = row["Order number"]
         order_length = len(orders.loc[orders["Order number"] == order_number])
 
-    # if multiple items associated with an order add those rows to a temporary dataframe
+        # multi-item orders
         if order_length > 1 or row["line_item_quantity"] > 1:   
             temp_df = pd.DataFrame()
+
+            # create dataframe of queries for all items on order
             while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
-                
-                # query inventory file for stores with the line item in stock
                 line_item_code = orders.loc[i, "Product barcode"]
                 multi_df = output1.loc[output1["Upc"] == line_item_code]
 
@@ -70,14 +70,11 @@ def main():
                 
                 # append to dataframe and move onto next row associated with order
                 temp_df = pd.concat([multi_df, temp_df])
-
                 i = i + 1
                 count = i
 
-            # count the number of entries each store has in the temporary dataframe (succesful queries)
+            # sort multi-line order and append to output dataframe
             temp_df = sort_multi(temp_df, order_length)
-            
-            # append to dataframe
             temp_df.insert(0, "order_number", order_number)
             output2 = pd.concat([temp_df, output2])
 
@@ -87,14 +84,7 @@ def main():
             df = output1.loc[output1["Upc"] == barcode]
             
             if not df.empty:
-                if len(df.loc[df.StoreCode == 99]) > 0:
-                    df = df.loc[df.StoreCode == 99]
-                elif len(df.loc[df.StoreCode == 8]) > 0:
-                    df = (df.loc[df.StoreCode == 8])
-                else:
-                    df = df.sample(frac=1).reset_index(drop=True)
-                    df = df.loc[[df.OnHand.idxmax()]]
-
+                df = sort(df)
                 # append order number to inventory information and add to output dataframe
                 df.insert(0, "order_number", order_number)  
                 output2 = pd.concat([df,output2])
@@ -102,6 +92,7 @@ def main():
     output2.order_number = output2.order_number.astype(str)
     output2 = output2.sort_values(by="order_number", ascending=False)
     output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
+
 
 def sort_multi(temp_df, order_length):
     sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) == order_length)
@@ -116,5 +107,16 @@ def sort_multi(temp_df, order_length):
         sample_store = sample_row.iloc[0]["StoreCode"]
         temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == sample_store]
     return temp_df
+
+
+def sort(df):
+    if len(df.loc[df.StoreCode == 99]) > 0:
+        df = df.loc[df.StoreCode == 99]
+    elif len(df.loc[df.StoreCode == 8]) > 0:
+        df = (df.loc[df.StoreCode == 8])
+    else:
+        df = df.sample(frac=1).reset_index(drop=True)
+        df = df.loc[[df.OnHand.idxmax()]]
+    return df
 
 main()
