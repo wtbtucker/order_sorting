@@ -103,6 +103,8 @@ def sort_multi(temp_df, order_length):
         random_row = randint(1, len(sorted_multi_df)) - 1
         random_store = sorted_multi_df.iloc[random_row]["StoreCode"]
         temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == random_store]
+    else:
+        temp_df = temp_df.sort_values(by=["Upc","StoreCode"])
     return temp_df
 
 
