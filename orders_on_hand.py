@@ -69,7 +69,8 @@ def main():
                 count = i
 
             # sort multi-line order and append to output dataframe
-            temp_df = sort_multi(temp_df, order_length)
+            if not temp_df.empty:
+                temp_df = sort_multi(temp_df, order_length)
             temp_df.insert(0, "order_number", order_number)
             output2 = pd.concat([temp_df, output2])
 
@@ -104,7 +105,27 @@ def sort_multi(temp_df, order_length):
         random_store = sorted_multi_df.iloc[random_row]["StoreCode"]
         temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == random_store]
     else:
-        temp_df = temp_df.sort_values(by=["Upc","StoreCode"])
+        # temp_df = temp_df.sort_values(by=["Upc","StoreCode"])
+
+        multi_store_df = pd.DataFrame()
+        # select rows from the store that has the most items
+        mode_list = temp_df["StoreCode"].mode().tolist()
+        if 99 in mode_list:
+            mode_store = 99
+        elif 8 in mode_list:
+            mode_store = 8
+        else:
+            mode_store = mode_list[randint(1, len(mode_list))-1]
+        most_queries = temp_df.loc[temp_df.StoreCode == mode_store]
+        mode_upc = most_queries.Upc.tolist()
+        print(mode_upc)
+        pd.concat([multi_store_df,most_queries])
+
+        # remove those items from the order and re-run the mode function
+        print(temp_df[~temp_df.Upc.isin(mode_upc)])
+ 
+        print(most_queries)
+
     return temp_df
 
 
