@@ -105,26 +105,7 @@ def sort_multi(temp_df, order_length):
         random_store = sorted_multi_df.iloc[random_row]["StoreCode"]
         temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == random_store]
     else:
-        # temp_df = temp_df.sort_values(by=["Upc","StoreCode"])
-
-        multi_store_df = pd.DataFrame()
-        # select rows from the store that has the most items
-        mode_list = temp_df["StoreCode"].mode().tolist()
-        if 99 in mode_list:
-            mode_store = 99
-        elif 8 in mode_list:
-            mode_store = 8
-        else:
-            mode_store = mode_list[randint(1, len(mode_list))-1]
-        most_queries = temp_df.loc[temp_df.StoreCode == mode_store]
-        mode_upc = most_queries.Upc.tolist()
-        print(mode_upc)
-        pd.concat([multi_store_df,most_queries])
-
-        # remove those items from the order and re-run the mode function
-        print(temp_df[~temp_df.Upc.isin(mode_upc)])
- 
-        print(most_queries)
+        temp_df = multi_store_mode(temp_df)
 
     return temp_df
 
@@ -139,5 +120,28 @@ def sort_single(df):
         df = df.sample(frac=1).reset_index(drop=True)
         df = df.loc[[df.OnHand.idxmax()]]
     return df
+
+
+# recursion within the function until temp_df = empty
+def multi_store_mode(temp_df):
+    # initialize empty dataframe to concat our queries to
+    multi_store_df = pd.DataFrame()
+
+    # base case of empty temp_df
+    while not temp_df.empty:
+        # actual sorting function
+        mode_list = temp_df["StoreCode"].mode().tolist()
+        if 99 in mode_list:
+            mode_store = 99
+        elif 8 in mode_list:
+            mode_store = 8
+        else:
+            mode_store = mode_list[randint(1, len(mode_list))-1]
+        most_queries = temp_df.loc[temp_df.StoreCode == mode_store]
+        mode_upc = most_queries.Upc.tolist()
+        multi_store_df = pd.concat([multi_store_df,most_queries])
+        temp_df = temp_df[~temp_df.Upc.isin(mode_upc)]
+    return multi_store_df
+    
 
 main()
