@@ -36,7 +36,6 @@ def main():
         
         # remove orders with notes
         orders = orders.loc[orders["Note"].isnull()]
-        orders = orders.reset_index()
 
     # merge inventory files and initialize output dataframe
     output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL","ROW"], right_on=["SKU","COL","ROW"])
@@ -95,9 +94,7 @@ def main():
 
 def sort_multi(temp_df, order_length):
     
-    # if possible select store with successful queries for all items on hand
-    # TODO: add logic for empty sorted_multi_df
-    # TODO: minimize the number of stores the order is sorted to
+    # TODO add support for multi-line item quantity
     sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) == order_length)
     if not sorted_multi_df.loc[sorted_multi_df.StoreCode == 99].empty:
             temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 99]
