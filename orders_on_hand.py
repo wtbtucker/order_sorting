@@ -72,10 +72,15 @@ def main():
                 count = i
 
             # sort multi-line order and append to output dataframe
-            if not temp_df.empty:
-                temp_df = sort_multi(temp_df, order_length)
-            temp_df.insert(0, "order_number", order_number)
-            output2 = pd.concat([temp_df, output2])
+            sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) == order_length)
+
+            if not sorted_multi_df.empty:
+                store = sort_multi(sorted_multi_df)
+                orders.loc[(i-order_length):(i-1), "Note"] = store
+            else:
+                temp_df = multi_store_mode(temp_df)
+                temp_df.insert(0, "order_number", order_number)
+                output2 = pd.concat([temp_df, output2])
 
         else:
             # return dataframe of inventory rows that match barcode
@@ -93,22 +98,19 @@ def main():
     output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
 
 
-def sort_multi(temp_df, order_length):
+def sort_multi(sorted_multi_df):
     
-    # TODO add support for multi-line item quantity
-    sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) == order_length)
+    # TODO add support for multi-line item quantity beyond the current stopgap
+    
+    # TODO paste the store code into the notes field for all lines associated with the order
     if not sorted_multi_df.loc[sorted_multi_df.StoreCode == 99].empty:
-            temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 99]
+        store = 99
     elif not sorted_multi_df.loc[sorted_multi_df.StoreCode == 8].empty:
-        temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == 8]
-    elif not sorted_multi_df.empty:
-        random_row = randint(1, len(sorted_multi_df)) - 1
-        random_store = sorted_multi_df.iloc[random_row]["StoreCode"]
-        temp_df = sorted_multi_df.loc[sorted_multi_df.StoreCode == random_store]
+        store = 8
     else:
-        temp_df = multi_store_mode(temp_df)
-
-    return temp_df
+        random_row = randint(1, len(sorted_multi_df)) - 1
+        store = sorted_multi_df.iloc[random_row]["StoreCode"]
+    return store
 
 
 def sort_single(df):
