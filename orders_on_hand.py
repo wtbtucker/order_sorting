@@ -11,12 +11,15 @@ def main():
     output_path = path + "\\orders_on_hand.csv"
 
     # open input files into pandas dataframes
+    
     with open(upc_path, "r") as upc_list:
         upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "SecondaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str, "SecondaryFeature":str})
         upc["COL"] = upc["PrimaryFeature"]
         upc["ROW"] = upc["SecondaryFeature"]
     with open(stock_path, "r") as stock_status:
         stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "ROW", "OnHand"], dtype={"COL":str, "ROW":str})
+        removed_stores = [9, 55, 96, 97, 98]
+        stock = stock[~stock.StoreCode.isin(removed_stores)]
     with open(orders_path, "r") as o:
         orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item quantity"], dtype={"Product barcode":str})
         orders["line_item_quantity"] = orders["Line item quantity"]
