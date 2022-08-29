@@ -34,6 +34,7 @@ def main():
                 orders.loc[i,"Order number"] = order_number
                 orders.loc[i,"Note"] = note
         
+        # TODO: possible run this when iterating over the orders to sort
         # remove orders with notes
         orders = orders.loc[orders["Note"].isnull()]
 
@@ -82,11 +83,11 @@ def main():
             df = output1.loc[output1["Upc"] == barcode]
             
             if not df.empty:
-                df = sort_single(df)
+                store = sort_single(df)
                 # append order number to inventory information and add to output dataframe
-                df.insert(0, "order_number", order_number)  
-                output2 = pd.concat([df,output2])
+                orders.loc[i,"Note"] = store
 
+    orders.to_csv(orders_path)
     output2.order_number = output2.order_number.astype(str)
     output2 = output2.sort_values(by="order_number", ascending=False)
     output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
@@ -112,14 +113,14 @@ def sort_multi(temp_df, order_length):
 
 def sort_single(df):
     if len(df.loc[df.StoreCode == 99]) > 0:
-        df = df.loc[df.StoreCode == 99]
+        store = 99
     elif len(df.loc[df.StoreCode == 8]) > 0:
-        df = (df.loc[df.StoreCode == 8])
+        store = 8
     else:
         # select random store
         df = df.sample(frac=1).reset_index(drop=True)
-        df = df.loc[[df.OnHand.idxmax()]]
-    return df
+        store = df.loc[df.OnHand.idxmax(), "StoreCode"]
+    return store
 
 
 # recursion within the function until temp_df = empty
