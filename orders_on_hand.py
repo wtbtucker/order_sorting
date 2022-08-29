@@ -58,7 +58,7 @@ def main():
 
             # create dataframe of queries for all items on order
             while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
-                line_item_code = orders.loc[i, "Product barcode"]
+                line_item_code = str(orders.loc[i, "Product barcode"])
                 multi_df = output1.loc[output1["Upc"] == line_item_code]
 
                 # add stores with line_item_quantity on hand or ensure sort to multiple stores
