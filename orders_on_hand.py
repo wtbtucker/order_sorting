@@ -40,7 +40,7 @@ def main():
 
     # merge inventory files and initialize output dataframe
     output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL","ROW"], right_on=["SKU","COL","ROW"])
-    output2 = pd.DataFrame()
+    output2 = pd.DataFrame(columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
 
     # iterate over rows in the order file
     count = 0
@@ -92,8 +92,9 @@ def main():
                 # append order number to inventory information and add to output dataframe
                 orders.loc[i,"Note"] = store
 
+    # TODO: initialize columns for output 2
     orders.to_csv(orders_path)
-    output2.order_number = output2.order_number.astype(str)
+    output2['order_number'] = output2['order_number'].astype(str)
     output2 = output2.sort_values(by="order_number", ascending=False)
     output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
 
