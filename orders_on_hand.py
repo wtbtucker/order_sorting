@@ -21,7 +21,7 @@ def main():
         removed_stores = [9, 55, 96, 97, 98]
         stock = stock[~stock.StoreCode.isin(removed_stores)]
     with open(orders_path, "r") as o:
-        orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item quantity"], dtype={"Product barcode":str})
+        orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item title", "Line item variant title", "Line item quantity"], dtype={"Product barcode":str})
         orders["line_item_quantity"] = orders["Line item quantity"]
 
         # add order number and note to multi-line orders
@@ -103,7 +103,7 @@ def sort_multi(sorted_multi_df):
     
     # TODO add support for multi-line item quantity beyond the current stopgap
     
-    # TODO paste the store code into the notes field for all lines associated with the order
+    # TODO maintain the original orders columns
     if not sorted_multi_df.loc[sorted_multi_df.StoreCode == 99].empty:
         store = 99
     elif not sorted_multi_df.loc[sorted_multi_df.StoreCode == 8].empty:
