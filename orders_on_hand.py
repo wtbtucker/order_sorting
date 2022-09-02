@@ -18,7 +18,7 @@ def main():
         upc["ROW"] = upc["SecondaryFeature"]
     with open(stock_path, "r") as stock_status:
         stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "ROW", "OnHand"], dtype={"COL":str, "ROW":str})
-        removed_stores = [9, 55, 96, 97, 98]
+        removed_stores = [9, 55, 97, 98]
         stock = stock[~stock.StoreCode.isin(removed_stores)]
     with open(orders_path, "r") as o:
         orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item title", "Line item variant title", "Line item quantity"], dtype={"Product barcode":str})
