@@ -48,7 +48,7 @@ def main():
 
     # iterate over rows in the order file
     count = 0
-    for i in range(0, (len(orders) - 1)):
+    for i in range(0, (len(orders))):
         # after multi-line order start at the next order, not the next row
         if i < count:
             continue
