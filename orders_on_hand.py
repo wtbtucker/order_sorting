@@ -2,6 +2,9 @@ import pandas as pd
 import os
 from random import randint
 
+# TODO fix last row
+# remove orders with notes and items without barcodes
+
 def main():
     # set path for input and output files
     path = os.path.dirname(os.path.realpath(__file__))
@@ -37,6 +40,7 @@ def main():
         # TODO: possible run this when iterating over the orders to sort
         # remove orders with notes
         orders = orders.loc[orders["Note"].isnull()]
+        orders = orders.loc[~orders["Product barcode"].isnull()]
 
     # merge inventory files and initialize output dataframe
     output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL","ROW"], right_on=["SKU","COL","ROW"])
@@ -58,11 +62,11 @@ def main():
 
             # create dataframe of queries for all items on order
             while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
-                line_item_code = str(orders.loc[i, "Product barcode"])
+                line_item_code = str(orders["Product barcode"].iloc[i])
                 multi_df = output1.loc[output1["Upc"] == line_item_code]
 
                 # add stores with line_item_quantity on hand or ensure sort to multiple stores
-                line_item_quantity = orders.loc[i, "line_item_quantity"]
+                line_item_quantity = orders["line_item_quantity"].iloc[i]
                 if not multi_df.loc[multi_df["OnHand"] >= line_item_quantity].empty:
                     multi_df = multi_df.loc[multi_df["OnHand"] >= line_item_quantity]
                 else:
@@ -76,7 +80,7 @@ def main():
 
             if not sorted_multi_df.empty:
                 store = sort_multi(sorted_multi_df)
-                orders.loc[(i-order_length):(i-1), "Note"] = store
+                orders["Note"].iloc[(i-order_length):(i)] = store
             else:
                 temp_df = multi_store_mode(temp_df)
                 temp_df.insert(0, "order_number", order_number)
@@ -90,7 +94,7 @@ def main():
             if not df.empty:
                 store = sort_single(df)
                 # append order number to inventory information and add to output dataframe
-                orders.loc[i,"Note"] = store
+                orders["Note"].iloc[i] = store
 
     # TODO: initialize columns for output 2
     orders.to_csv(orders_path)
@@ -103,7 +107,7 @@ def sort_multi(sorted_multi_df):
     
     # TODO add support for multi-line item quantity beyond the current stopgap
     
-    # TODO maintain the original orders columns
+    # TODO maintain the order of the original orders columns
     if not sorted_multi_df.loc[sorted_multi_df.StoreCode == 99].empty:
         store = 99
     elif not sorted_multi_df.loc[sorted_multi_df.StoreCode == 8].empty:
