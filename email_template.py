@@ -20,7 +20,6 @@ def main():
             else:
                 store_name = store[0]
 
-            prelim_template = "Hi " + store_name
             # create a list from the dictreader
             orders = []
             for row in reader:
@@ -33,14 +32,13 @@ def main():
                 print("No orders")
             else:
                 # create second half of email template
-                text = ",\n\nCould you please fulfill the following orders?\n\n"
+                orders_string = ""
                 for i in store_orders:
-                    text = text + i + "\n"
-                text = text + "\nMake sure to confirm SKU, size, and quantity before sealing the box. Please reply to this email to confirm.\n\nSincerely\nBill"
-                # combine first half and second half of template. print and copy to clipboard
-                end_template = prelim_template + text
-                print(end_template)
-                copy(end_template)
+                    orders_string += i + "\n"
+                text = "Hi {sname},\n\nCould you please fulfill the following orders?\n\n{orders}\nMake sure to confirm SKU, size, and quantity before sealing the box.\
+                     Please reply to this email to confirm.\n\nSincerely\nBill".format(sname=store_name, orders=orders_string)
+                print(text)
+                copy(text)
 
 
 def generate_templates(store, order_list):
