@@ -43,7 +43,7 @@ def main():
             temp_df = pd.DataFrame()
 
             # create dataframe of queries for all items on order
-            while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
+            while orders.iloc[i]["Order number"] == order_number:
                 line_item_code = str(orders["Product barcode"].iloc[i])
                 multi_df = inventory_df.loc[inventory_df["Upc"] == line_item_code]
 
@@ -56,6 +56,8 @@ def main():
                 temp_df = pd.concat([multi_df, temp_df])
                 i = i + 1
                 count = i
+                if i >= len(orders):
+                    break
 
             # sort multi-line order and append to output dataframe
             sorted_multi_df = temp_df.groupby("StoreCode").filter(lambda x: len(x) == order_length)
