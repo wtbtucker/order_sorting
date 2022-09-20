@@ -14,35 +14,18 @@ def main():
     output_path = path + "\\orders_on_hand.csv"
 
     # open input files into pandas dataframes
-    with open(upc_path, "r") as upc_list:
-        upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "SecondaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str, "SecondaryFeature":str})
-        upc["COL"] = upc["PrimaryFeature"]
-        upc["ROW"] = upc["SecondaryFeature"]
-    with open(stock_path, "r") as stock_status:
-        stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "ROW", "OnHand"], dtype={"COL":str, "ROW":str})
-        removed_stores = [9, 55, 97, 98]
-        stock = stock[~stock.StoreCode.isin(removed_stores)]
-    with open(orders_path, "r") as o:
-        orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item title", "Line item variant title", "Line item quantity"], dtype={"Product barcode":str})
-        orders["line_item_quantity"] = orders["Line item quantity"]
-
-        # add order number and note to multi-line orders
-        for i in range(len(orders)):
-            row = orders.iloc[i]
-            if not pd.isna(row["Order number"]):
-                order_number = row["Order number"]
-                note = row["Note"]
-            else:
-                orders.loc[i,"Order number"] = order_number
-                orders.loc[i,"Note"] = note
+    upc_df = open_upc_file(upc_path)
+    stock_df = open_stock_file(stock_path)
+    inventory_df = pd.merge(upc_df, stock_df, how="inner", left_on=["Sku","COL","ROW"], right_on=["SKU","COL","ROW"])
+    orders = open_orders_file(orders_path)
         
-        # Remove line items without barcodes and orders with notes
-        orders = remove_notes(orders)
-        orders = remove_team_sales(orders)
+    # Remove line items without barcodes and orders with notes
+    orders = remove_notes(orders)
+    orders = remove_team_sales(orders)
         
 
     # merge inventory files and initialize output dataframe
-    output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL","ROW"], right_on=["SKU","COL","ROW"])
+    
     output2 = pd.DataFrame(columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
 
     # iterate over rows in the order file
@@ -62,7 +45,7 @@ def main():
             # create dataframe of queries for all items on order
             while orders.iloc[i]["Order number"] == order_number and i in range(0, (len(orders) - 1)):
                 line_item_code = str(orders["Product barcode"].iloc[i])
-                multi_df = output1.loc[output1["Upc"] == line_item_code]
+                multi_df = inventory_df.loc[inventory_df["Upc"] == line_item_code]
 
                 # add stores with line_item_quantity on hand or ensure sort to multiple stores
                 line_item_quantity = orders["line_item_quantity"].iloc[i]
@@ -88,7 +71,7 @@ def main():
         else:
             # return dataframe of inventory rows that match barcode
             barcode = row["Product barcode"]
-            df = output1.loc[output1["Upc"] == barcode]
+            df = inventory_df.loc[inventory_df["Upc"] == barcode]
             
             if not df.empty:
                 store = sort_single(df)
@@ -101,6 +84,39 @@ def main():
     output2 = output2.sort_values(by="order_number", ascending=False)
     output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
 
+def open_upc_file(upc_path):
+    with open(upc_path, "r") as upc_list:
+        upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "SecondaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str, "SecondaryFeature":str})
+        upc["COL"] = upc["PrimaryFeature"]
+        upc["ROW"] = upc["SecondaryFeature"]
+        return upc
+
+def open_stock_file(stock_path):
+    with open(stock_path, "r") as stock_status:
+        stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "ROW", "OnHand"], dtype={"COL":str, "ROW":str})
+        removed_stores = [9, 55, 97, 98]
+        stock = stock[~stock.StoreCode.isin(removed_stores)]
+        return stock
+
+def open_orders_file(orders_path):
+    with open(orders_path, "r") as o:
+        orders = pd.read_csv(o, usecols = ["Order number", "Note", "Product barcode", "Line item title", "Line item variant title", "Line item quantity"], dtype={"Product barcode":str})
+    orders["line_item_quantity"] = orders["Line item quantity"]
+    
+    # add order number and note to multi-line orders
+    orders = extrapolate_order_information(orders)
+    return orders
+
+def extrapolate_order_information(orders):
+    for i in range(len(orders)):
+        row = orders.iloc[i]
+        if not pd.isna(row["Order number"]):
+            order_number = row["Order number"]
+            note = row["Note"]
+        else:
+            orders.loc[i,"Order number"] = order_number
+            orders.loc[i,"Note"] = note
+    return orders
 
 def remove_notes(orders):
     orders = orders.loc[orders["Note"].isnull()]
