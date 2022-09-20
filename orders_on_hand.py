@@ -14,7 +14,6 @@ def main():
     output_path = path + "\\orders_on_hand.csv"
 
     # open input files into pandas dataframes
-    
     with open(upc_path, "r") as upc_list:
         upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "SecondaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str, "SecondaryFeature":str})
         upc["COL"] = upc["PrimaryFeature"]
@@ -37,10 +36,10 @@ def main():
                 orders.loc[i,"Order number"] = order_number
                 orders.loc[i,"Note"] = note
         
-        # TODO: possible run this when iterating over the orders to sort
-        # remove orders with notes
-        orders = orders.loc[orders["Note"].isnull()]
-        orders = orders.loc[~orders["Product barcode"].isnull()]
+        # Remove line items without barcodes and orders with notes
+        orders = remove_notes(orders)
+        orders = remove_team_sales(orders)
+        
 
     # merge inventory files and initialize output dataframe
     output1 = pd.merge(upc, stock, how="inner", left_on=["Sku","COL","ROW"], right_on=["SKU","COL","ROW"])
@@ -102,6 +101,14 @@ def main():
     output2 = output2.sort_values(by="order_number", ascending=False)
     output2.to_csv(output_path, index="false", columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
 
+
+def remove_notes(orders):
+    orders = orders.loc[orders["Note"].isnull()]
+    return orders
+
+def remove_team_sales(orders):
+    orders = orders.loc[~orders["Product barcode"].isnull()]
+    return orders
 
 def sort_multi(sorted_multi_df):
     
