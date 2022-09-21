@@ -67,8 +67,13 @@ def main():
                 orders["Note"].iloc[(i-order_length):(i)] = store
             else:
                 temp_df = multi_store_mode(temp_df)
-                temp_df.insert(0, "order_number", order_number)
-                output2 = pd.concat([temp_df, output2])
+                # iterate over the line items on this order
+                for j in range((i-order_length),i):
+                    on_hand = temp_df.loc[temp_df["Upc"]==orders["Product barcode"].iloc[j]]
+                    if (on_hand["OnHand"].iloc[0] >= orders["Line item quantity"].iloc[j]):
+                        orders["Note"].iloc[j] = on_hand["StoreCode"].iloc[0]
+                    else:
+                        j += 1
 
         else:
             # return dataframe of inventory rows that match barcode
