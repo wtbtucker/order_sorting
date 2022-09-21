@@ -36,7 +36,7 @@ def main():
                 for i in store_orders:
                     orders_string += i + "\n"
                 text = "Hi {sname},\n\nCould you please fulfill the following orders?\n\n{orders}\nMake sure to confirm SKU, size, and quantity before sealing the box.\
-                     Please reply to this email to confirm.\n\nSincerely\nBill".format(sname=store_name, orders=orders_string)
+ Please reply to this email to confirm.\n\nSincerely\nBill".format(sname=store_name, orders=orders_string)
                 print(text)
                 copy(text)
 
