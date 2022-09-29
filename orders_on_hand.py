@@ -70,10 +70,11 @@ def main():
                 # iterate over the line items on this order
                 for j in range((i-order_length),i):
                     on_hand = temp_df.loc[temp_df["Upc"]==orders["Product barcode"].iloc[j]]
-                    if (on_hand["OnHand"].iloc[0] >= orders["Line item quantity"].iloc[j]):
-                        orders["Note"].iloc[j] = on_hand["StoreCode"].iloc[0]
-                    else:
-                        j += 1
+                    if not on_hand.empty:
+                        if (on_hand["OnHand"].iloc[0] >= orders["Line item quantity"].iloc[j]):
+                            orders["Note"].iloc[j] = on_hand["StoreCode"].iloc[0]
+                        else:
+                            j += 1
 
         else:
             # return dataframe of inventory rows that match barcode
