@@ -65,7 +65,7 @@ def main():
             if not sorted_multi_df.empty:
                 store = sort_multi(sorted_multi_df)
                 orders["Note"].iloc[(i-order_length):(i)] = store
-            else:
+            elif not temp_df.empty:
                 temp_df = multi_store_mode(temp_df)
                 # iterate over the line items on this order
                 for j in range((i-order_length),i):
