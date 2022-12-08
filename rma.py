@@ -41,35 +41,41 @@ def main():
         navigate_store(store)
         navigate_menu('ctl00_ContentPlaceHolder1_btnScanView')
         for line_item in store_dict[store]:
+            driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').clear()
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').send_keys(line_item[0])
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(line_item[1])
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(Keys.RETURN)
             navigate_menu('ctl00_cmdMaster5')
     driver.quit()
 
+# Log into the RICS marathon sports store using hard-coded credentials
 def login():
     global driver
     driver.get('https://marathonsportsma.enterprise.ricssoftware.com/Login.aspx?')
-
     usernameElement = driver.find_element(By.ID, 'textbox_user_name')
     usernameElement.send_keys('online sales')
     passwordElement = driver.find_element(By.ID, 'textbox_pass_word')
     passwordElement.send_keys('Runner$4')
     passwordElement.send_keys(Keys.ENTER)
 
+# Type store number into the store code field
 def navigate_store(store_number):
     global driver
     storeCode = driver.find_element(By.ID, 'ctl00_lblOrganization')
     storeInputElement = driver.find_element(By.ID, 'ctl00_otxtQuickOrganizationNavigation_txtOrganizationCriteriaEntry')
     storeInputElement.send_keys(store_number)
     storeInputElement.send_keys(Keys.RETURN)
+
+    # Wait until page loads with the correct store number at top
     WebDriverWait(driver, timeout=10).until(EC.text_to_be_present_in_element((By.ID, 'ctl00_lblOrganization'), store_number))
 
+# Select 'inventory', 'stock maintenance', then 'Enter Returns to Supplier (RMA)'
 def navigate_rma():
     navigate_menu('ctl00_btnStock')
     navigate_menu('n3')
     navigate_menu('n14')
 
+# Move to and click on HTML element
 def navigate_menu(id):
     try:
         element = driver.find_element(By.ID, id)
@@ -77,6 +83,8 @@ def navigate_menu(id):
         actions.move_to_element(element)
         actions.click(element)
         actions.perform()
+    
+    # Handle stale reference errors when the page reloads
     except StaleElementReferenceException:
         element = driver.find_element(By.ID, id)
         actions = ActionChains(driver)
@@ -113,8 +121,9 @@ def create_store_dict():
                 store_tuple = (order_number, barcode)
                 store_dict[store].append(store_tuple)
                 quantity = quantity - 1
+    
+    # remove store 99 from the dictionary because those items do not need to be RMAd
     store_dict.pop('99')
-    store_dict.pop('17')
     return store_dict
 
 main()
