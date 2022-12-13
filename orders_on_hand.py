@@ -2,9 +2,6 @@ import pandas as pd
 import os
 from random import randint
 
-# TODO fix last row
-# remove orders with notes and items without barcodes
-
 def main():
     # set path for input and output files
     path = os.path.dirname(os.path.realpath(__file__))
@@ -24,14 +21,13 @@ def main():
     orders = remove_team_sales(orders)
         
 
-    # merge inventory files and initialize output dataframe
-    
+    # initialize output dataframe
     output2 = pd.DataFrame(columns=["order_number", "StoreCode", "OnHand", "SKU", "COL", "Upc"])
 
     # iterate over rows in the order file
     count = 0
     for i in range(0, (len(orders))):
-        # after multi-line order start at the next order, not the next row
+        # after multi-line order start at the beginning of the next order instead of the next row
         if i < count:
             continue
         row = orders.iloc[i]
@@ -85,8 +81,10 @@ def main():
                 store = sort_single(df)
                 # append order number to inventory information and add to output dataframe
                 orders["Note"].iloc[i] = store
+                if ")" not in row["Line item title"]:
+                    orders["Note"].iloc[i] = str(orders["Note"].iloc[i]) + " " + str(df["Sku"].iloc[0])
 
-    # TODO: initialize columns for output 2
+
     orders.to_csv(orders_path)
     output2['order_number'] = output2['order_number'].astype(str)
     output2 = output2.sort_values(by="order_number", ascending=False)
@@ -102,7 +100,7 @@ def open_upc_file(upc_path):
 def open_stock_file(stock_path):
     with open(stock_path, "r") as stock_status:
         stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "ROW", "OnHand"], dtype={"COL":str, "ROW":str})
-        removed_stores = [9, 55, 97, 98]
+        removed_stores = [7, 9, 21, 22, 23, 55, 97, 98]
         stock = stock[~stock.StoreCode.isin(removed_stores)]
         return stock
 
@@ -134,11 +132,8 @@ def remove_team_sales(orders):
     orders = orders.loc[~orders["Product barcode"].isnull()]
     return orders
 
+
 def sort_multi(sorted_multi_df):
-    
-    # TODO add support for multi-line item quantity beyond the current stopgap
-    
-    # TODO maintain the order of the original orders columns
     if not sorted_multi_df.loc[sorted_multi_df.StoreCode == 99].empty:
         store = 99
     elif not sorted_multi_df.loc[sorted_multi_df.StoreCode == 8].empty:
