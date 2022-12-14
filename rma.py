@@ -7,6 +7,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import StaleElementReferenceException 
 import os
 import csv
+# TODO: fix store number with sku in notes
+
 
 driver = webdriver.Edge()
 receive_path = 'C:\\Users\\wtbtu\\Documents\\marathon_sports\\order_sorting\\99 scan upload.txt'
@@ -37,16 +39,13 @@ def main():
 
     # create file to be received into store 99 and dictionary with the items to be removed from individual stores
     store_dict, barcode_list = create_store_dict()
+    print(store_dict)
     write_receive_file(barcode_list)
 
     login()
     navigate_store('99') 
-    navigate_receive()
-
-    # Enter the path for the receive file into the browse field and submit
-    pathElement = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_portableReaderInterface_txtFilePath')
-    pathElement.send_keys(receive_path)
-    navigate_menu('ctl00_ContentPlaceHolder1_portableReaderInterface_btnUploadFromFile')
+    receive_file()
+    navigate_rma()
 
     # iterate through list of stores removing associated items one by one
     for store in store_dict:
@@ -59,10 +58,11 @@ def main():
             # enter product into UPC field
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(line_item[1])
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(Keys.RETURN)
-            driver.implicitly_wait(1)
-            # save entry
-            navigate_menu('ctl00_cmdMaster5')
+
             
+
+            navigate_menu('ctl00_cmdMaster5')
+
     driver.quit()
 
 
@@ -82,7 +82,9 @@ def navigate_store(store_number):
     global driver
     storeInputElement = driver.find_element(By.ID, 'ctl00_otxtQuickOrganizationNavigation_txtOrganizationCriteriaEntry')
     storeInputElement.send_keys(store_number)
-    driver.implicitly_wait(1)
+
+    # Wait until the placeholder disappears from the store code input
+    WebDriverWait(driver, timeout=10).until(EC.none_of(EC.text_to_be_present_in_element((By.ID,'ctl00_otxtQuickOrganizationNavigation_txtOrganizationCriteriaEntry'), 'Store Code')))
     storeInputElement.send_keys(Keys.RETURN)
 
     # Wait until page loads with the correct store number at top
@@ -167,5 +169,21 @@ def write_receive_file(barcode_list):
             output.write("\t")
             output.write("01")
             output.write("\n")
+
+def receive_file():
+    global receive_path
+    global driver
+
+    navigate_receive()
+
+    # Enter the path for the receive file into the browse field and submit
+    pathElement = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_portableReaderInterface_txtFilePath')
+    pathElement.send_keys(receive_path)
+    navigate_menu('ctl00_ContentPlaceHolder1_portableReaderInterface_btnUploadFromFile')
+
+    WebDriverWait(driver, timeout=10).until(EC.text_to_be_present_in_element((By.ID, 'ctl00_ContentPlaceHolder1_portableReaderInterface_lblUploadStatus'), 'The file has been received by the server. Processing...'))
+    navigate_menu('ctl00_ContentPlaceHolder1_btnScanView')
+    navigate_menu('ctl00_cmdMaster5')
+
 
 main()
