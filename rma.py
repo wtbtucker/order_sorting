@@ -35,37 +35,61 @@ store_names  = dict(Norwell = 1,
 
 def main():
     global driver
-
-    # create file to be received into store 99 and dictionary with the items to be removed from individual stores
-    store_dict, barcode_list = create_store_dict()
-    print(store_dict)
-
-    write_receive_file(barcode_list)
+    # Functions for testing different waits
+    test_upc = 412345028487
+    test_order_number = 173420
 
     login()
-    navigate_store('99') 
-    receive_file()
+    navigate_store('99')
     navigate_rma()
+    # navigate to 'Scanning' tab
+    navigate_menu('ctl00_ContentPlaceHolder1_btnScanView')
 
-    # iterate through list of stores as keys
-    for store in store_dict:
-        navigate_store(store)
+    # Enter Shopify order number in 'RMA Number' field
+    driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').clear()
+    driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').send_keys(test_order_number)
+    
+    # Enter product barcode into UPC field
+    driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(test_upc)
+    driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(Keys.RETURN)
+    WebDriverWait(driver, timeout=10).until(EC.text_to_be_present_in_element((By.ID,'ctl00_ContentPlaceHolder1_productEntryList_lblPrice'), '.'))
+
+    # Add entry and save
+    navigate_menu('ctl00_ContentPlaceHolder1_productEntryList_btnAddToList')
+    navigate_menu('ctl00_cmdMaster5')
+
+
+
+    # # create file to be received into store 99 and dictionary with the items to be removed from individual stores
+    # store_dict, barcode_list = create_store_dict()
+    # print(store_dict)
+
+    # write_receive_file(barcode_list)
+
+    # login()
+    # navigate_store('99') 
+    # receive_file()
+    # navigate_rma()
+
+    # # iterate through list of stores as keys
+    # for store in store_dict:
+    #     navigate_store(store)
         
-        # navigate to 'Scanning' tab
-        navigate_menu('ctl00_ContentPlaceHolder1_btnScanView')
+    #     # navigate to 'Scanning' tab
+    #     navigate_menu('ctl00_ContentPlaceHolder1_btnScanView')
 
-        # Use order number and barcode to remove each line item assigned to a particular store
-        for line_item in store_dict[store]:
-            # Enter Shopify order number in 'RMA Number' field
-            driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').clear()
-            driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').send_keys(line_item[0])
-            # enter product barcode into UPC field
-            driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(line_item[1])
-            driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(Keys.RETURN)
+    #     # Use order number and barcode to remove each line item assigned to a particular store
+    #     for line_item in store_dict[store]:
+    #         # Enter Shopify order number in 'RMA Number' field
+    #         driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').clear()
+    #         driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').send_keys(line_item[0])
+    #         # enter product barcode into UPC field
+    #         driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(line_item[1])
+    #         driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(Keys.RETURN)
 
-            # add entry and save
-            navigate_menu('ctl00_ContentPlaceHolder1_productEntryList_btnAddToList')
-            navigate_menu('ctl00_cmdMaster5')
+    #         # add entry and save
+    #         navigate_menu('ctl00_ContentPlaceHolder1_productEntryList_btnAddToList')
+    #         navigate_menu('ctl00_cmdMaster5')
 
     driver.quit()
 
@@ -101,7 +125,7 @@ def navigate_rma():
     navigate_menu('n3')
     navigate_menu('n14')
 
-# Select 'inventory', 'receiving', 'receive stock without PO', 'upload', then 'Upload From File'
+# Select 'inventory', 'receiving', 'receive stock without PO'
 def navigate_receive():
     navigate_menu('ctl00_btnStock')
     navigate_menu('n22')
@@ -191,13 +215,11 @@ def receive_file():
     navigate_menu('ctl00_cmdMaster5')
 
 def wait_present(id):
-    global driver
+    global driver    
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, id)))
+    return
 
-    try: 
-        element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, id))
-        )
-    finally:
-        driver.quit()
+    
 
 main()
