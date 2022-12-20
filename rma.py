@@ -9,7 +9,6 @@ import os
 import csv
 # TODO: fix store number with sku in notes
 
-
 driver = webdriver.Edge()
 receive_path = 'C:\\Users\\wtbtu\\Documents\\marathon_sports\\order_sorting\\99 scan upload.txt'
 store_names  = dict(Norwell = 1,
@@ -40,6 +39,7 @@ def main():
     # create file to be received into store 99 and dictionary with the items to be removed from individual stores
     store_dict, barcode_list = create_store_dict()
     print(store_dict)
+
     write_receive_file(barcode_list)
 
     login()
@@ -47,20 +47,24 @@ def main():
     receive_file()
     navigate_rma()
 
-    # iterate through list of stores removing associated items one by one
+    # iterate through list of stores as keys
     for store in store_dict:
         navigate_store(store)
+        
+        # navigate to 'Scanning' tab
         navigate_menu('ctl00_ContentPlaceHolder1_btnScanView')
+
+        # Use order number and barcode to remove each line item assigned to a particular store
         for line_item in store_dict[store]:
-            # use Shopify order number as RMA code
+            # Enter Shopify order number in 'RMA Number' field
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').clear()
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').send_keys(line_item[0])
-            # enter product into UPC field
+            # enter product barcode into UPC field
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(line_item[1])
             driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(Keys.RETURN)
 
-            
-
+            # add entry and save
+            navigate_menu('ctl00_ContentPlaceHolder1_productEntryList_btnAddToList')
             navigate_menu('ctl00_cmdMaster5')
 
     driver.quit()
@@ -102,8 +106,6 @@ def navigate_receive():
     navigate_menu('ctl00_btnStock')
     navigate_menu('n22')
     navigate_menu('n25')
-    navigate_menu('ctl00_ContentPlaceHolder1_btnUploadView')
-    navigate_menu('ctl00_ContentPlaceHolder1_portableReaderInterface_radioFile')
 
 # Move to and click on HTML element
 def navigate_menu(id):
@@ -121,7 +123,6 @@ def navigate_menu(id):
         actions.move_to_element(element)
         actions.click(element)
         actions.perform()
-
 
 def create_store_dict():
     # initialize dictionary for receipt and list for RMA
@@ -176,6 +177,10 @@ def receive_file():
 
     navigate_receive()
 
+    # Select 'Upload', then 'Upload From File'
+    navigate_menu('ctl00_ContentPlaceHolder1_btnUploadView')
+    navigate_menu('ctl00_ContentPlaceHolder1_portableReaderInterface_radioFile')
+
     # Enter the path for the receive file into the browse field and submit
     pathElement = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_portableReaderInterface_txtFilePath')
     pathElement.send_keys(receive_path)
@@ -185,5 +190,14 @@ def receive_file():
     navigate_menu('ctl00_ContentPlaceHolder1_btnScanView')
     navigate_menu('ctl00_cmdMaster5')
 
+def wait_present(id):
+    global driver
+
+    try: 
+        element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, id))
+        )
+    finally:
+        driver.quit()
 
 main()
