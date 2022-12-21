@@ -52,45 +52,19 @@ def main():
     # Enter product barcode into UPC field
     driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(test_upc)
     driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(Keys.RETURN)
+    
+    # Wait for period in price field to be present indicating item information has populated then add item
     WebDriverWait(driver, timeout=10).until(EC.text_to_be_present_in_element((By.ID,'ctl00_ContentPlaceHolder1_productEntryList_lblPrice'), '.'))
-
-    # Add entry and save
     navigate_menu('ctl00_ContentPlaceHolder1_productEntryList_btnAddToList')
+
+    # Wait for entry table row to be present indicating item is added then save
+    entryRow = driver.find_element(By.XPATH, '//*[@id="ctl00_ContentPlaceHolder1_productEntryList_tblProductEntryResults"]/tbody/tr ')
+    WebDriverWait(driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="ctl00_ContentPlaceHolder1_productEntryList_tblProductEntryResults"]/tbody/tr ')))
     navigate_menu('ctl00_cmdMaster5')
 
-
-
-    # # create file to be received into store 99 and dictionary with the items to be removed from individual stores
-    # store_dict, barcode_list = create_store_dict()
-    # print(store_dict)
-
-    # write_receive_file(barcode_list)
-
-    # login()
-    # navigate_store('99') 
-    # receive_file()
-    # navigate_rma()
-
-    # # iterate through list of stores as keys
-    # for store in store_dict:
-    #     navigate_store(store)
-        
-    #     # navigate to 'Scanning' tab
-    #     navigate_menu('ctl00_ContentPlaceHolder1_btnScanView')
-
-    #     # Use order number and barcode to remove each line item assigned to a particular store
-    #     for line_item in store_dict[store]:
-    #         # Enter Shopify order number in 'RMA Number' field
-    #         driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').clear()
-    #         driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_txtRmaNumber').send_keys(line_item[0])
-    #         # enter product barcode into UPC field
-    #         driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(line_item[1])
-    #         driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_productEntryList_txtIdentifier').send_keys(Keys.RETURN)
-
-    #         # add entry and save
-    #         navigate_menu('ctl00_ContentPlaceHolder1_productEntryList_btnAddToList')
-    #         navigate_menu('ctl00_cmdMaster5')
-
+    # Wait for entry table row to disappear before proceeding to next action
+    WebDriverWait(driver, timeout=10).until(EC.none_of(EC.presence_of_element_located((By.XPATH, '//*[@id="ctl00_ContentPlaceHolder1_productEntryList_tblProductEntryResults"]/tbody/tr '))))
+    
     driver.quit()
 
 
