@@ -92,7 +92,8 @@ def main():
 
 def open_upc_file(upc_path):
     with open(upc_path, "r") as upc_list:
-        upc = pd.read_csv(upc_list, usecols = ["Sku", "PrimaryFeature", "SecondaryFeature", "Upc"], dtype={"Upc":str, "PrimaryFeature":str, "SecondaryFeature":str})
+        upc = pd.read_csv(upc_list, dtype={"Upc":str, "PrimaryFeature":str, "SecondaryFeature":str})
+        # usecols = ["Sku", "PrimaryFeature", "SecondaryFeature", "Upc"], 
         upc["COL"] = upc["PrimaryFeature"]
         upc["ROW"] = upc["SecondaryFeature"]
         return upc
@@ -100,7 +101,7 @@ def open_upc_file(upc_path):
 def open_stock_file(stock_path):
     with open(stock_path, "r") as stock_status:
         stock = pd.read_csv(stock_status, usecols = ["StoreCode", "SKU", "COL", "ROW", "OnHand"], dtype={"COL":str, "ROW":str})
-        removed_stores = [7, 9, 21, 22, 23, 55, 97, 98]
+        removed_stores = [9, 21, 22, 23, 55, 97, 98]
         stock = stock[~stock.StoreCode.isin(removed_stores)]
         return stock
 

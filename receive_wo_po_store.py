@@ -11,6 +11,7 @@ store_names = dict(Norwell = 1,
                         Cambridge = 5,
                         Melrose = 6,
                         Mansfield = 7,
+                        Warehouse = 8,
                         Branford = 10,
                         Old_Saybrook = 11,
                         Plymouth = 12,
@@ -65,4 +66,3 @@ for key, value in store_names.items():
             output.write("\t")
             output.write("01")
             output.write("\n")
-

@@ -27,7 +27,7 @@ with open(orders_path, "r") as o:
             quantity = 0
         
         # add barcode quantity times to barcode_list
-        if store != "99":
+        if store != "99" and store != "fba":
             while quantity > 0:
                 barcode_list.append(barcode)
                 quantity = quantity - 1
