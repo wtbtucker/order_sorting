@@ -4,13 +4,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import StaleElementReferenceException 
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 import os
 import csv
-# TODO: fix store number with sku in notes
 
 driver = webdriver.Edge()
-receive_path = 'C:\\Users\\wtbtu\\Documents\\marathon_sports\\order_sorting\\99 scan upload.txt'
+receive_path = 'C:\\Users\\wtbtu\\Documents\\marathon_sports\\order_sorting\\fake_orders_for_test.txt'
 store_names  = dict(Norwell = 1,
                         Boston = 2,
                         Wellesley = 3,
@@ -44,7 +43,7 @@ def main():
 
     login()
     navigate_store('99') 
-    # receive_file()
+    receive_file()
     navigate_rma()
 
     # iterate through list of stores as keys
@@ -110,9 +109,12 @@ def navigate_store(store_number):
     WebDriverWait(driver, timeout=10).until(EC.text_to_be_present_in_element((By.ID, 'ctl00_lblOrganization'), store_number))
 
 
-# Select 'inventory', 'stock maintenance', then 'Enter Returns to Supplier (RMA)'
+# Select 'inventory', 'Stock Maintenance', then 'Enter Returns to Supplier (RMA)'
 def navigate_rma():
-    navigate_menu('ctl00_btnStock')
+    while True:
+        navigate_menu('ctl00_btnStock')
+        if EC.visibility_of_element_located((By.ID, 'n3')):
+            break
     navigate_menu('n3')
     navigate_menu('n14')
 
@@ -124,20 +126,27 @@ def navigate_receive():
 
 # Move to and click on HTML element
 def navigate_menu(id):
-    try:
+    
+    def click_button():
         element = driver.find_element(By.ID, id)
         actions = ActionChains(driver)
         actions.move_to_element(element)
         actions.click(element)
         actions.perform()
     
-    # Handle stale reference errors when the page reloads
-    except StaleElementReferenceException:
-        element = driver.find_element(By.ID, id)
-        actions = ActionChains(driver)
-        actions.move_to_element(element)
-        actions.click(element)
-        actions.perform()
+    try:
+        click_button()
+
+    # Handle stale reference errors when the element is no longer on the DOM
+    except StaleElementReferenceException as e:
+        print(e)
+
+    # Handle element not present
+    except NoSuchElementException as e:
+        print(e)
+        # Wait before clicking button to ensure DOM is loaded and element is present
+        WebDriverWait(driver, timeout=10).until(EC.visibility_of_element_located((By.ID, id)))
+        click_button()
 
 def create_store_dict():
     # initialize dictionary for receipt and list for RMA
